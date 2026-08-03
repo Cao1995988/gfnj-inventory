@@ -1,0 +1,230 @@
+/* ===== 共福农机库存管理系统 - 手机优先样式（iPhone/华为适配）===== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans","Microsoft YaHei",sans-serif;
+  background:#f4f6f9;color:#1a1a1a;font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  /* iOS 安全区底部留白 */
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+a{color:inherit;text-decoration:none}
+
+/* ===== 顶部导航 ===== */
+.top-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:0 12px;padding-top:env(safe-area-inset-top,0);
+  min-height:52px;background:#1e6b3a;color:#fff;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+.brand{font-weight:600;font-size:16px;white-space:nowrap;flex-shrink:0}
+/* 导航在手机上横向滚动，不换行挤占 */
+.nav{
+  display:flex;gap:4px;flex:1;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  flex-wrap:nowrap;
+}
+.nav::-webkit-scrollbar{display:none}
+.nav a{
+  padding:8px 12px;border-radius:6px;opacity:.92;
+  font-size:14px;white-space:nowrap;flex-shrink:0;
+  min-height:36px;display:flex;align-items:center;
+  transition:background .15s;
+}
+.nav a:hover,.nav a:active{background:rgba(255,255,255,.2);opacity:1}
+.user{display:flex;align-items:center;gap:6px;flex-shrink:0;font-size:13px}
+.user small{background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;font-size:11px}
+.user a{opacity:.9;padding:6px 8px}
+
+/* ===== 主容器 ===== */
+.container{max-width:1200px;margin:0 auto;padding:12px}
+h2{margin:4px 0 14px;color:#1e6b3a;font-size:20px}
+h3{margin-bottom:12px;font-size:17px}
+h4{margin:14px 0 8px;color:#555;font-size:15px}
+
+.page-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:14px;flex-wrap:wrap;gap:10px;
+}
+.head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ===== 表单元素（放大点击区域，适配手机）===== */
+input,select,textarea{
+  padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;
+  font-size:16px;background:#fff;color:#1a1a1a;
+  -webkit-appearance:none;appearance:none;
+  min-height:44px; /* iOS 最小点击区 */
+}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  padding-right:32px;
+}
+input[type=number]{width:100px}
+textarea{width:100%;min-height:80px}
+label{display:block;margin:8px 0;font-size:14px;color:#444}
+label input,label select,label textarea{margin-top:4px;width:100%}
+.form-row{display:flex;gap:12px}
+.form-row label{flex:1}
+
+/* ===== 按钮（44px 点击区）===== */
+.btn{
+  padding:10px 16px;border:1px solid #1e6b3a;background:#fff;color:#1e6b3a;
+  border-radius:8px;cursor:pointer;font-size:14px;
+  min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  transition:all .15s;font-weight:500;
+}
+.btn:hover,.btn:active{background:#f0f7f2}
+.btn.primary{background:#1e6b3a;color:#fff;border-color:#1e6b3a}
+.btn.primary:active{background:#175030}
+.btn.small{padding:6px 12px;font-size:12px;min-height:32px}
+.btn.danger{border-color:#dc3545;color:#dc3545;background:#fff}
+.btn.danger:active{background:#fdf0f1}
+
+/* ===== 数据表格（手机可横向滚动）===== */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);background:#fff}
+.data-table{width:100%;border-collapse:collapse;background:#fff;min-width:500px}
+.data-table th,.data-table td{padding:12px;text-align:left;border-bottom:1px solid #eee;font-size:14px;vertical-align:middle}
+.data-table th{background:#e8f3ed;color:#1e6b3a;font-weight:600;white-space:nowrap;position:sticky;top:0}
+.data-table tr:active{background:#f0f7f2}
+.data-table td .btn{margin-right:4px}
+
+/* ===== 看板统计卡 ===== */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#fff;padding:18px 12px;border-radius:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat .num{font-size:26px;font-weight:bold;color:#1e6b3a;word-break:break-all}
+.stat .lbl{color:#666;margin-top:6px;font-size:13px}
+
+.panel{background:#fff;padding:16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.quick-actions{display:flex;gap:8px;flex-wrap:wrap}
+.quick-actions .btn{flex:1;min-width:120px}
+
+/* ===== 条形图 ===== */
+.bar-row{display:flex;align-items:center;gap:8px;margin:10px 0}
+.bar-label{width:75px;font-size:13px;color:#333;flex-shrink:0;text-align:right}
+.bar-track{flex:1;height:24px;background:#f0f2f5;border-radius:12px;overflow:hidden;min-width:60px}
+.bar-fill{height:100%;border-radius:12px;transition:width .5s ease;min-width:2px}
+.bar-val{width:75px;font-size:13px;font-weight:bold;flex-shrink:0}
+
+/* ===== 环形图 ===== */
+.ring-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center}
+.ring{width:180px;height:180px;flex-shrink:0}
+.ring-legend{flex:1;min-width:160px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:13px;margin:6px 0}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.legend-name{flex:1;color:#333}
+.legend-val{color:#666;font-size:12px}
+
+@media(max-width:600px){
+  .bar-label{width:60px;font-size:12px}
+  .bar-val{width:60px;font-size:12px}
+  .ring{width:140px;height:140px}
+  .ring-wrap{flex-direction:column}
+}
+
+/* ===== 弹窗 ===== */
+.modal{
+  border:none;border-radius:14px;padding:18px;
+  max-width:92vw;width:480px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+  margin:auto;
+  -webkit-overflow-scrolling:touch;
+  max-height:90vh;overflow-y:auto;
+}
+.modal.large{width:760px}
+.modal form{display:block}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.dlg-actions .btn{flex:1;max-width:140px}
+.total-row{text-align:right;font-weight:bold;margin-top:12px;color:#1e6b3a;font-size:18px}
+
+/* ===== 提示/标签 ===== */
+.error{color:#dc3545;margin-bottom:10px;font-size:14px;background:#fdf0f1;padding:10px;border-radius:8px}
+.hint{margin-top:16px;text-align:center;color:#888;font-size:12px}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.check input{min-height:auto;width:auto}
+.tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:500}
+.tag.paid{background:#d4edda;color:#155724}
+.tag.credit{background:#fff3cd;color:#856404}
+.tag.settled{background:#cce5ff;color:#004085}
+
+/* ===== 登录页 ===== */
+.login-page{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;min-height:100dvh;
+  background:linear-gradient(135deg,#1e6b3a 0%,#154d2a 100%);
+  padding:20px;padding-top:env(safe-area-inset-top,0);
+}
+.login-card{background:#fff;padding:28px 24px;border-radius:16px;width:100%;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.login-card h2{text-align:center;margin-bottom:20px;color:#1e6b3a;font-size:22px}
+.login-card form{display:flex;flex-direction:column;gap:14px}
+.login-card label{margin:0;color:#444}
+.login-card button{
+  background:#1e6b3a;color:#fff;border:none;
+  padding:14px;border-radius:10px;cursor:pointer;
+  font-size:16px;font-weight:500;margin-top:6px;
+  min-height:48px;
+}
+.login-card button:active{background:#175030}
+
+/* ===== 二维码页 ===== */
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.qr-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;text-align:center;page-break-inside:avoid}
+.qr-card img{width:100%;height:auto;max-width:130px}
+.qr-code{font-size:13px;font-weight:bold;color:#1e6b3a;margin-top:6px}
+.qr-name{font-size:13px;margin-top:2px;color:#333}
+.qr-spec{font-size:11px;color:#888;margin-top:2px}
+.qr-price{font-size:15px;font-weight:bold;color:#dc3545;margin-top:4px}
+
+/* ===== 扫码区 ===== */
+#scan-area{position:relative;margin-bottom:14px}
+#video{width:100%;max-width:480px;border-radius:10px;background:#000;display:block}
+
+/* ===== 手机端响应式（< 600px）===== */
+@media(max-width:600px){
+  body{font-size:15px}
+  .container{padding:10px}
+  h2{font-size:18px;margin:2px 0 12px}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat{padding:14px 8px}
+  .stat .num{font-size:22px}
+  .form-row{flex-direction:column;gap:0}
+  .modal{width:94vw;padding:16px;border-radius:14px}
+  .modal.large{width:94vw}
+  .data-table th,.data-table td{padding:10px 8px;font-size:13px}
+  .page-head{flex-direction:column;align-items:stretch}
+  .page-head .btn,.page-head .head-actions .btn{width:100%}
+  .head-actions{justify-content:space-between}
+  .head-actions .btn{flex:1}
+  .dlg-actions .btn{flex:1}
+  .nav a{padding:8px 10px;font-size:13px}
+  .brand{font-size:15px}
+  .qr-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ===== iPhone 刘海屏/全面屏适配 ===== */
+@supports(padding:max(0px)){
+  .top-bar{padding-top:max(0px,env(safe-area-inset-top))}
+  body{padding-bottom:max(0px,env(safe-area-inset-bottom))}
+}
+
+/* ===== 华为/安卓 微信内置浏览器兼容 ===== */
+@media screen and (max-width:600px){
+  /* 修正部分安卓机 input 失焦页面放大问题 */
+  input[type="text"],input[type="password"],input[type="number"],
+  input[type="search"],input[type="tel"],select,textarea{
+    font-size:16px;
+  }
+  /* 触摸滚动更顺 */
+  .data-table,.nav,.modal{
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
+/* ===== 打印（二维码）===== */
+@media print{
+  .top-bar,.page-head,.hint{display:none!important}
+  .qr-grid{grid-template-columns:repeat(3,1fr)}
+  .qr-card{border:1px dashed #999}
+  body{background:#fff;padding:0}
+}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}扫码出入库{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>扫码出入库</h2>
+  <div class="head-actions">
+    <label>方向
+      <select id="f-direction" onchange="renderList()">
+        <option value="in">入库（+库存）</option>
+        <option value="out">出库（-库存）</option>
+      </select>
+    </label>
+    <button class="btn primary" id="btn-scan" onclick="startScan()">📷 扫码添加</button>
+    <button class="btn" onclick="manualAdd()">手动输入编码</button>
+    <button class="btn danger" onclick="clearList()">清空</button>
+    <button class="btn primary" onclick="submit()">提交</button>
+  </div>
+</div>
+
+<div id="scan-area" style="display:none;position:relative;margin-bottom:12px">
+  <video id="video" autoplay playsinline style="width:100%;max-width:480px;border-radius:8px;background:#000"></video>
+  <div style="position:absolute;top:0;left:0;right:0;height:40px;background:rgba(0,0,0,.4);color:#fff;text-align:center;line-height:40px;font-size:13px">将商品二维码/条码对准框内</div>
+  <button class="btn" style="margin-top:8px" onclick="stopScan()">停止扫码</button>
+</div>
+<div id="scan-status" style="display:none;padding:8px 12px;background:#e8f5e9;border-radius:6px;color:#1e6b3a;font-size:14px;margin-bottom:8px"></div>
+
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>编码</th><th>名称</th><th>当前库存</th><th>数量</th><th>操作后</th><th>删除</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+<div class="total-row">已扫 <span id="count">0</span> 项</div>
+
+<dialog id="manual" class="modal">
+  <form method="dialog" onsubmit="addManual(event)">
+    <h3>手动输入编码</h3>
+    <label>商品编码<input id="m-code" required autofocus></label>
+    <label>数量<input id="m-qty" type="number" step="0.01" value="1" required></label>
+    <div class="dlg-actions">
+      <button type="button" onclick="document.getElementById('manual').close()">取消</button>
+      <button type="submit" class="primary">添加</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/jsQR.min.js"></script>
+<script src="/static/js/scan.js"></script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - 商品详情{% endblock %}
+{% block content %}
+<div class="panel" style="max-width:600px;margin:20px auto">
+  <h2>{{ product.name }}</h2>
+  <table class="data-table">
+    <tr><td style="width:80px;font-weight:bold">编码</td><td>{{ product.code }}</td></tr>
+    <tr><td style="font-weight:bold">类别</td><td>{{ product.category or '-' }}</td></tr>
+    <tr><td style="font-weight:bold">规格</td><td>{{ product.spec or '-' }}</td></tr>
+    <tr><td style="font-weight:bold">单位</td><td>{{ product.unit or '个' }}</td></tr>
+    <tr><td style="font-weight:bold">售价</td><td>¥{{ "%.2f"|format(product.sale_price) }}</td></tr>
+    <tr><td style="font-weight:bold">库存</td><td>{{ product.stock }}</td></tr>
+  </table>
+  <div style="margin-top:16px;display:flex;gap:8px">
+    <a href="/scan#code={{ product.code | urlencode }}" class="btn primary">扫码出入库</a>
+    <a href="/products" class="btn">返回商品列表</a>
+  </div>
+</div>
+{% endblock %}

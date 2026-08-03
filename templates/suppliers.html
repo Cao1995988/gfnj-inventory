@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}供应商{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>供应商管理</h2>
+  <button class="btn primary" onclick="openEdit()">+ 新增</button>
+</div>
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>名称</th><th>联系人</th><th>电话</th><th>地址</th><th>备注</th><th>操作</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+<dialog id="dlg" class="modal">
+  <form method="dialog" onsubmit="save(event)">
+    <h3 id="dlg-title">新增供应商</h3>
+    <input type="hidden" id="f-id">
+    <label>名称<input id="f-name" required></label>
+    <label>联系人<input id="f-contact"></label>
+    <label>电话<input id="f-phone"></label>
+    <label>地址<input id="f-address"></label>
+    <label>备注<textarea id="f-notes"></textarea></label>
+    <div class="dlg-actions">
+      <button type="button" onclick="document.getElementById('dlg').close()">取消</button>
+      <button type="submit" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function load(){
+  const d = await api('/api/suppliers');
+  if(!d) return;
+  $('#tbl tbody').innerHTML = d.data.map(s=>`<tr>
+    <td>${s.name}</td>
+    <td>${s.contact||''}</td>
+    <td>${s.phone||''}</td>
+    <td>${s.address||''}</td>
+    <td>${s.notes||''}</td>
+    <td><button class="btn small" onclick="openEdit(${s.id})">改</button>
+      <button class="btn small danger" onclick="del(${s.id})">删</button></td>
+  </tr>`).join('') || '<tr><td colspan="6">无数据</td></tr>';
+}
+
+async function openEdit(id){
+  const dlg = $('#dlg');
+  $('#dlg-title').textContent = id ? '编辑供应商' : '新增供应商';
+  $('#f-id').value = '';
+  $('#f-name').value = '';
+  $('#f-contact').value = '';
+  $('#f-phone').value = '';
+  $('#f-address').value = '';
+  $('#f-notes').value = '';
+  if(id){
+    const d = await api('/api/suppliers');
+    if(!d) return;
+    const s = d.data.find(x=>x.id===id);
+    if(!s) return;
+    $('#f-id').value = s.id;
+    $('#f-name').value = s.name;
+    $('#f-contact').value = s.contact||'';
+    $('#f-phone').value = s.phone||'';
+    $('#f-address').value = s.address||'';
+    $('#f-notes').value = s.notes||'';
+  }
+  dlg.showModal();
+}
+
+async function save(e){
+  e.preventDefault();
+  const id = $('#f-id').value;
+  const body = {
+    name: $('#f-name').value.trim(),
+    contact: $('#f-contact').value.trim(),
+    phone: $('#f-phone').value.trim(),
+    address: $('#f-address').value.trim(),
+    notes: $('#f-notes').value.trim(),
+  };
+  const d = await api(id?`/api/suppliers/${id}`:'/api/suppliers', {method:id?'PUT':'POST', body:JSON.stringify(body)});
+  if(!d) return;
+  $('#dlg').close();
+  load();
+}
+
+async function del(id){
+  if(!confirm('确认删除该供应商？')) return;
+  await api(`/api/suppliers/${id}`, {method:'DELETE'});
+  load();
+}
+
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}赊账客户{% endblock %}
+{% block content %}
+<div class="page-head"><h2>赊账客户</h2></div>
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>客户</th><th>电话</th><th>累计欠款</th><th>操作</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<dialog id="settle" class="modal">
+  <form method="dialog" onsubmit="doSettle(event)">
+    <h3>还款登记</h3>
+    <input type="hidden" id="s-cid">
+    <p>客户: <span id="s-name"></span></p>
+    <p>当前欠款: ¥<span id="s-debt"></span></p>
+    <label>本次还款金额<input id="s-amount" type="number" step="0.01" required></label>
+    <label>备注<input id="s-notes"></label>
+    <div class="dlg-actions">
+      <button type="button" onclick="document.getElementById('settle').close()">取消</button>
+      <button type="submit" class="primary">确认还款</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="history" class="modal large">
+  <h3>还款记录</h3>
+  <div class="table-wrap"><table class="data-table" id="hist-tbl">
+    <thead><tr><th>时间</th><th>金额</th><th>操作人</th><th>备注</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function load(){
+  const d = await api('/api/customers');
+  if(!d) return;
+  $('#tbl tbody').innerHTML = d.data.map(c=>`<tr>
+    <td>${c.name}</td>
+    <td>${c.phone||''}</td>
+    <td style="color:${c.total_debt>0?'#dc3545':'#155724'};font-weight:bold">¥${fmt(c.total_debt)}</td>
+    <td>
+      <button class="btn small" onclick="openSettle(${c.id},'${c.name}',${c.total_debt})">还款</button>
+      <button class="btn small" onclick="viewHistory(${c.id})">记录</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="4">无数据</td></tr>';
+}
+
+function openSettle(id, name, debt){
+  $('#s-cid').value = id;
+  $('#s-name').textContent = name;
+  $('#s-debt').textContent = debt.toFixed(2);
+  $('#s-amount').value = '';
+  $('#s-notes').value = '';
+  $('#settle').showModal();
+}
+
+async function doSettle(e){
+  e.preventDefault();
+  const id = $('#s-cid').value;
+  const amount = +($('#s-amount').value)||0;
+  if(amount <= 0){ alert('还款金额必须大于0'); return; }
+  const d = await api(`/api/customers/${id}/settle`, {method:'POST', body:JSON.stringify({
+    amount: amount,
+    notes: $('#s-notes').value
+  })});
+  if(!d) return;
+  $('#settle').close();
+  load();
+}
+
+async function viewHistory(id){
+  const d = await api(`/api/customers/${id}/history`);
+  if(!d) return;
+  $('#hist-tbl tbody').innerHTML = d.data.map(h=>`<tr>
+    <td>${h.created_at}</td>
+    <td>¥${fmt(h.amount)}</td>
+    <td>${h.operator}</td>
+    <td>${h.notes||''}</td>
+  </tr>`).join('') || '<tr><td colspan="4">无记录</td></tr>';
+  $('#history').showModal();
+}
+
+load();
+</script>
+{% endblock %}

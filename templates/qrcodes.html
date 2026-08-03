@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}商品二维码{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>商品二维码</h2>
+  <div class="head-actions">
+    <input id="q" placeholder="搜编码/名称" oninput="load()" style="width:200px">
+    <button class="btn primary" onclick="window.print()">🖨️ 打印当前页</button>
+  </div>
+</div>
+<p class="hint" style="margin-bottom:12px;color:#666">把二维码打印贴到货架，入库/出库时用「扫码出入库」页摄像头扫码即可识别商品</p>
+<div class="qr-grid" id="grid"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/qrcode.min.js"></script>
+<script>
+function makeQrPng(text, cellSize, margin) {
+  cellSize = cellSize || 5;
+  margin = margin || 8;
+  var qr = qrcode(0, 'M');
+  qr.addData(text);
+  qr.make();
+  var count = qr.getModuleCount();
+  var size = count * cellSize + margin * 2;
+  var canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000000';
+  for (var r = 0; r < count; r++) {
+    for (var c = 0; c < count; c++) {
+      if (qr.isDark(r, c)) {
+        ctx.fillRect(c * cellSize + margin, r * cellSize + margin, cellSize, cellSize);
+      }
+    }
+  }
+  return canvas.toDataURL('image/png');
+}
+
+async function load(){
+  const q = $('#q').value;
+  const d = await api('/api/products?q='+encodeURIComponent(q));
+  if(!d) return;
+  const grid = $('#grid');
+  grid.innerHTML = d.data.map(p=>{
+    const url = location.origin + '/p/' + encodeURIComponent(p.code);
+    const png = makeQrPng(url, 5, 8);
+    return `<div class="qr-card">
+      <img src="${png}" alt="QR: ${p.code}">
+      <div class="qr-code">${p.code}</div>
+      <div class="qr-name">${p.name}</div>
+      <div class="qr-spec">${p.spec||''} ${p.unit||''}</div>
+      <div class="qr-price">¥${Number(p.sale_price).toFixed(2)}</div>
+    </div>`;
+  }).join('') || '<p>无数据</p>';
+}
+load();
+</script>
+{% endblock %}

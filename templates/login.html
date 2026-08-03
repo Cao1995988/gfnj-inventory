@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>共福农机库存管理系统</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <h2>⚙️ 共福农机库存管理系统</h2>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/login" id="login-form">
+      <label>账号<input name="username" id="username" required autofocus></label>
+      <label>密码<input type="password" name="password" id="password" required></label>
+      <label class="remember-label">
+        <input type="checkbox" id="remember" name="remember"> 记住账号密码
+      </label>
+      <button type="submit">登录</button>
+    </form>
+    <p class="hint">店长 owner（密码2888）/ 店员 clerk（密码123456）</p>
+  </div>
+  <style>
+  .remember-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #555; cursor: pointer; user-select: none; }
+  .remember-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #1e6b3a; }
+  </style>
+  <script>
+  (function() {
+    var KEY = 'gfnj_saved_login';
+    var u = document.getElementById('username');
+    var p = document.getElementById('password');
+    var r = document.getElementById('remember');
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || '{}');
+      if (s.username) {
+        u.value = s.username;
+        if (s.password) { p.value = s.password; r.checked = true; }
+        u.blur(); setTimeout(function(){ p.focus(); }, 50);
+      }
+    } catch(e) {}
+    document.getElementById('login-form').addEventListener('submit', function() {
+      if (r.checked) {
+        localStorage.setItem(KEY, JSON.stringify({username: u.value, password: p.value}));
+      } else {
+        localStorage.removeItem(KEY);
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

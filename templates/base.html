@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>{% block title %}共福农机库存管理系统{% endblock %}</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#1e6b3a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="共福农机">
+  <link rel="apple-touch-icon" href="/static/icon.png">
+  <link rel="icon" href="/static/icon.png">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header class="top-bar">
+    <a href="/" class="brand">⚙️ 共福农机</a>
+    <div class="user">
+      <span>{{ user.name }}</span>
+      <small>{{ '店长' if user.role == 'owner' else '店员' }}</small>
+      <a href="/logout">退出</a>
+    </div>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/js/common.js"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js').then(reg => {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          location.reload();
+        });
+      }).catch(()=>{});
+    });
+  }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

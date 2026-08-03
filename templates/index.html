@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}看板 - 共福农机库存管理系统{% endblock %}
+{% block content %}
+<h2>今日看板</h2>
+
+<div class="panel">
+  <h3>功能入口</h3>
+  <div class="quick-actions">
+    <a href="/sales" class="btn primary">销售开单</a>
+    <a href="/scan" class="btn primary">扫码出入库</a>
+    <a href="/products" class="btn">商品管理</a>
+    <a href="/purchases" class="btn">入库登记</a>
+    <a href="/suppliers" class="btn">供应商</a>
+    <a href="/customers" class="btn">赊账客户</a>
+    <a href="/qrcodes" class="btn">商品二维码</a>
+    <a href="/logs" class="btn">操作记录</a>
+    {% if user.role == 'owner' %}
+    <a href="/users" class="btn">用户管理</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="num" id="s-products">-</div><div class="lbl">商品种类</div></div>
+  <div class="stat"><div class="num" id="s-low">-</div><div class="lbl">低库存预警</div></div>
+  <div class="stat"><div class="num" id="s-today">¥-</div><div class="lbl">今日销售额</div></div>
+  <div class="stat"><div class="num" id="s-credit">¥-</div><div class="lbl">赊账总额</div></div>
+  <div class="stat"><div class="num" id="s-in" style="color:#2a9d8f">-</div><div class="lbl">今日入库</div></div>
+  <div class="stat"><div class="num" id="s-out" style="color:#e76f51">-</div><div class="lbl">今日出库</div></div>
+</div>
+
+<div class="panel">
+  <h3>各商品库存一览</h3>
+  <div id="stock-chart"></div>
+</div>
+
+<div class="panel">
+  <h3>库存数量占比</h3>
+  <div class="ring-wrap">
+    <svg id="ring-svg" viewBox="0 0 200 200" class="ring"></svg>
+    <div class="ring-legend" id="ring-legend"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const COLORS = ['#1e6b3a','#2a9d8f','#e9c46a','#f4a261','#e76f51','#264653','#6a4c93','#ff595e','#8ac926','#1982c4'];
+
+async function load(){
+  const d = await api('/api/dashboard');
+  if(!d) return;
+  $('#s-products').textContent = d.data.product_count;
+  $('#s-low').textContent = d.data.low_stock;
+  $('#s-today').textContent = '¥' + fmt(d.data.today_sales);
+  $('#s-credit').textContent = '¥' + fmt(d.data.total_credit);
+  $('#s-in').textContent = fmt(d.data.today_in);
+  $('#s-out').textContent = fmt(d.data.today_out);
+
+  // Bar chart
+  const list = d.data.stock_list || [];
+  const maxStock = Math.max(...list.map(x=>x.stock), 1);
+  let barHTML = '';
+  list.forEach((p, i) => {
+    const pct = (p.stock / maxStock * 100).toFixed(1);
+    barHTML += `<div class="bar-row">
+      <div class="bar-label">${p.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div>
+      <div class="bar-val">${p.stock} ${p.unit||''}</div>
+    </div>`;
+  });
+  $('#stock-chart').innerHTML = barHTML || '<p>暂无商品</p>';
+
+  // Ring chart
+  const totalStock = list.reduce((s,x)=>s+x.stock, 0) || 1;
+  const svg = $('#ring-svg');
+  const legend = $('#ring-legend');
+  const cx=100, cy=100, r=70, sw=20;
+  let angle = 0;
+  let svgHTML = '';
+  let legendHTML = '';
+  list.forEach((p, i) => {
+    const slice = (p.stock / totalStock) * 360;
+    const startAngle = angle * Math.PI / 180;
+    const endAngle = (angle + slice) * Math.PI / 180;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const large = slice > 180 ? 1 : 0;
+    svgHTML += `<path d="M${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${COLORS[i%COLORS.length]}" stroke-width="${sw}" stroke-linecap="butt"/>`;
+    const pct = (p.stock / totalStock * 100).toFixed(1);
+    legendHTML += `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div><div class="legend-name">${p.name}</div><div class="legend-val">${pct}%</div></div>`;
+    angle += slice;
+  });
+  svg.innerHTML = svgHTML;
+  legend.innerHTML = legendHTML;
+}
+load();
+</script>
+{% endblock %}

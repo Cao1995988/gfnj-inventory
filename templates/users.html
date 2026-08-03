@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}用户管理{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>用户管理</h2>
+  <button class="btn primary" onclick="openEdit()">+ 新建账号</button>
+</div>
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<dialog id="dlg" class="modal">
+  <form method="dialog" onsubmit="save(event)">
+    <h3 id="dlg-title">新建账号</h3>
+    <input type="hidden" id="f-id">
+    <label>登录账号<input id="f-username" required></label>
+    <label>姓名（开单时显示）<input id="f-display" required></label>
+    <label>角色
+      <select id="f-role">
+        <option value="clerk">店员（仅开单+查库存）</option>
+        <option value="owner">店长（全部权限）</option>
+      </select>
+    </label>
+    <label>密码<input id="f-password" type="text" placeholder="新建必填，修改留空则不改"></label>
+    <label>状态
+      <select id="f-enabled">
+        <option value="1">启用</option>
+        <option value="0">停用</option>
+      </select>
+    </label>
+    <div class="dlg-actions">
+      <button type="button" onclick="document.getElementById('dlg').close()">取消</button>
+      <button type="submit" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const isSelf = name => name === "{{ user.username }}";
+const ROLE = {owner:'店长', clerk:'店员'};
+async function load(){
+  const d = await api('/api/users');
+  if(!d) return;
+  $('#tbl tbody').innerHTML = d.data.map(u=>`<tr>
+    <td>${u.username}</td>
+    <td>${u.display_name}</td>
+    <td>${ROLE[u.role]||u.role}</td>
+    <td>${u.enabled?`<span class="tag paid">启用</span>`:`<span class="tag credit">停用</span>`}</td>
+    <td>${u.created_at}</td>
+    <td><button class="btn small" onclick="openEdit(${u.id})">改</button>
+      <button class="btn small danger" onclick="del(${u.id},'${u.username}')">删</button></td>
+  </tr>`).join('') || '<tr><td colspan="6">无数据</td></tr>';
+}
+async function openEdit(id){
+  const dlg = $('#dlg');
+  $('#dlg-title').textContent = id ? '编辑账号' : '新建账号';
+  $('#f-id').value = '';
+  $('#f-username').value = '';
+  $('#f-display').value = '';
+  $('#f-password').value = '';
+  $('#f-role').value = 'clerk';
+  $('#f-enabled').value = '1';
+  $('#f-username').disabled = false;
+  if(id){
+    const d = await api('/api/users');
+    if(!d) return;
+    const u = d.data.find(x=>x.id===id);
+    if(!u) return;
+    $('#f-id').value = u.id;
+    $('#f-username').value = u.username;
+    $('#f-username').disabled = true;
+    $('#f-display').value = u.display_name;
+    $('#f-role').value = u.role;
+    $('#f-enabled').value = u.enabled;
+  }
+  dlg.showModal();
+}
+async function save(e){
+  e.preventDefault();
+  const id = $('#f-id').value;
+  const body = {
+    display_name: $('#f-display').value.trim(),
+    role: $('#f-role').value,
+    enabled: +$('#f-enabled').value,
+  };
+  const pwd = $('#f-password').value;
+  if(!id){
+    body.username = $('#f-username').value.trim();
+    if(!body.username){ alert('请填账号'); return; }
+    if(!pwd){ alert('新建账号必须设密码'); return; }
+    body.password = pwd;
+  } else if(pwd){
+    body.password = pwd;
+  }
+  const d = await api(id?`/api/users/${id}`:'/api/users', {method:id?'PUT':'POST', body:JSON.stringify(body)});
+  if(!d) return;
+  $('#dlg').close();
+  load();
+}
+async function del(id, name){
+  if(!confirm(`确认删除账号 ${name}？该账号将无法登录。`)) return;
+  await api(`/api/users/${id}`, {method:'DELETE'});
+  load();
+}
+load();
+</script>
+{% endblock %}

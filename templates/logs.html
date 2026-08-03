@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}操作记录{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>操作记录</h2>
+  <div class="head-actions">
+    <select id="f-table" onchange="load()">
+      <option value="">全部表</option>
+      <option value="products">商品</option>
+      <option value="suppliers">供应商</option>
+      <option value="purchases">入库单</option>
+      <option value="sales">销售单</option>
+      <option value="credits">赊账还款</option>
+    </select>
+    <select id="f-action" onchange="load()">
+      <option value="">全部操作</option>
+      <option value="create">新增</option>
+      <option value="update">修改</option>
+      <option value="delete">删除</option>
+    </select>
+    <input id="f-date" type="date" onchange="load()">
+  </div>
+</div>
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>对象</th><th>单号</th><th>查看详情</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<dialog id="diff" class="modal large">
+  <h3>修改对比</h3>
+  <div id="diff-body"></div>
+  <div class="dlg-actions"><button onclick="document.getElementById('diff').close()">关闭</button></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ACT = {create:'新增',update:'修改',delete:'删除',settle:'还款'};
+const TBL = {products:'商品',suppliers:'供应商',purchases:'入库单',sales:'销售单',credits:'赊账还款',users:'用户'};
+
+async function load(){
+  const params = new URLSearchParams();
+  const table = $('#f-table').value;
+  const action = $('#f-action').value;
+  const date = $('#f-date').value;
+  if(table) params.set('table', table);
+  if(action) params.set('action', action);
+  if(date) params.set('date', date);
+  const d = await api('/api/logs?'+params.toString());
+  if(!d) return;
+  $('#tbl tbody').innerHTML = d.data.map(l=>`<tr>
+    <td>${l.created_at}</td>
+    <td>${l.user_name||l.op||''}</td>
+    <td>${ACT[l.action]||l.action}</td>
+    <td>${TBL[l.target_table]||l.target_table} #${l.target_id||''}</td>
+    <td>${l.order_no||''}</td>
+    <td><button class="btn small" onclick="showDiff(${l.id})">对比</button></td>
+  </tr>`).join('') || '<tr><td colspan="6">无数据</td></tr>';
+}
+
+async function showDiff(id){
+  // Find the log entry
+  const params = new URLSearchParams();
+  const d = await api('/api/logs?'+params.toString());
+  if(!d) return;
+  const log = d.data.find(x=>x.id===id);
+  if(!log) return;
+  let html = '';
+  if(log.before_data && log.after_data){
+    try{
+      const before = JSON.parse(log.before_data);
+      const after = JSON.parse(log.after_data);
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+      html += '<div><h4>修改前</h4><pre style="background:#fff3cd;padding:12px;border-radius:8px;font-size:12px;overflow:auto;max-height:300px">'+JSON.stringify(before,null,2)+'</pre></div>';
+      html += '<div><h4>修改后</h4><pre style="background:#d4edda;padding:12px;border-radius:8px;font-size:12px;overflow:auto;max-height:300px">'+JSON.stringify(after,null,2)+'</pre></div>';
+      html += '</div>';
+    }catch(e){
+      html = '<p>数据格式错误</p>';
+    }
+  } else if(log.before_data){
+    html = '<h4>被删除的数据</h4><pre style="background:#fff3cd;padding:12px;border-radius:8px;font-size:12px;overflow:auto">'+log.before_data+'</pre>';
+  } else if(log.after_data){
+    html = '<h4>新增的数据</h4><pre style="background:#d4edda;padding:12px;border-radius:8px;font-size:12px;overflow:auto">'+log.after_data+'</pre>';
+  } else {
+    html = '<p>无详情</p>';
+  }
+  $('#diff-body').innerHTML = html;
+  $('#diff').showModal();
+}
+
+load();
+</script>
+{% endblock %}

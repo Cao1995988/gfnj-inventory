@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}销售开单{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>销售开单</h2>
+  <button class="btn primary" onclick="openNew()">+ 新建销售单</button>
+</div>
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>单号</th><th>客户</th><th>电话</th><th>金额</th><th>已付</th><th>付款</th><th>状态</th><th>操作人</th><th>日期</th><th>操作</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+
+<dialog id="dlg" class="modal large">
+  <form method="dialog" onsubmit="save(event)">
+    <h3 id="dlg-title">销售开单</h3>
+    <input type="hidden" id="f-id">
+    <div class="form-row">
+      <label>客户姓名<input id="f-customer"></label>
+      <label>电话<input id="f-phone"></label>
+    </div>
+    <div class="form-row">
+      <label>付款方式
+        <select id="f-method" onchange="onMethod()">
+          <option value="cash">现金</option>
+          <option value="wechat">微信</option>
+          <option value="alipay">支付宝</option>
+          <option value="credit">赊账</option>
+        </select>
+      </label>
+      <label>已付金额<input id="f-paid" type="number" step="0.01" value="0"></label>
+    </div>
+    <label>备注<input id="f-notes"></label>
+    <h4>商品明细 <button type="button" class="btn small" onclick="addItem()">+ 添加行</button></h4>
+    <div class="table-wrap"><table class="data-table" id="items">
+      <thead><tr><th>商品</th><th>库存</th><th>数量</th><th>单价</th><th>小计</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="total-row">合计: <span id="total">0.00</span></div>
+    <div class="dlg-actions">
+      <button type="button" onclick="document.getElementById('dlg').close()">取消</button>
+      <button type="submit" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="detail" class="modal large">
+  <div id="detail-body"></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let saleItems = [];
+let allProducts = [];
+
+async function loadProducts(){
+  const d = await api('/api/products');
+  if(d) allProducts = d.data;
+}
+
+function loadList(){
+  api('/api/sales').then(d=>{
+    if(!d) return;
+    $('#tbl tbody').innerHTML = d.data.map(s=>{
+      const methodMap = {cash:'现金',wechat:'微信',alipay:'支付宝',credit:'赊账'};
+      return `<tr>
+        <td>${s.order_no}</td>
+        <td>${s.customer_name||''}</td>
+        <td>${s.customer_phone||''}</td>
+        <td>¥${fmt(s.total)}</td>
+        <td>¥${fmt(s.paid)}</td>
+        <td>${methodMap[s.method]||s.method}</td>
+        <td>${tag(s.status)}</td>
+        <td>${s.operator}</td>
+        <td>${s.created_at?s.created_at.substring(0,10):''}</td>
+        <td>
+          <button class="btn small" onclick="viewDetail(${s.id})">详情</button>
+          <button class="btn small danger" onclick="del(${s.id})">删</button>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="10">无数据</td></tr>';
+  });
+}
+
+async function openNew(){
+  await loadProducts();
+  saleItems = [];
+  $('#dlg-title').textContent = '销售开单';
+  $('#f-id').value = '';
+  $('#f-customer').value = '';
+  $('#f-phone').value = '';
+  $('#f-method').value = 'cash';
+  $('#f-paid').value = 0;
+  $('#f-notes').value = '';
+  renderSaleItems();
+  calcTotal();
+  $('#dlg').showModal();
+}
+
+function renderSaleItems(){
+  $('#items tbody').innerHTML = saleItems.map((it,i)=>`<tr>
+    <td>
+      <select onchange="onProductChange(${i},this.value)" style="width:100%">
+        <option value="">选择商品</option>
+        ${allProducts.map(p=>`<option value="${p.id}" ${p.id==it.product_id?'selected':''}>${p.code} ${p.name}</option>`).join('')}
+      </select>
+    </td>
+    <td>${it.stock||0}</td>
+    <td><input type="number" step="0.01" value="${it.quantity||1}" style="width:80px" oninput="onQtyChange(${i},this.value)"></td>
+    <td><input type="number" step="0.01" value="${it.price||0}" style="width:90px" oninput="onPriceChange(${i},this.value)"></td>
+    <td>¥${fmt((it.quantity||0)*(it.price||0))}</td>
+    <td><button type="button" class="btn small danger" onclick="removeItem(${i})">删</button></td>
+  </tr>`).join('') || '<tr><td colspan="6">请添加商品</td></tr>';
+}
+
+function addItem(){
+  saleItems.push({product_id:'',product_name:'',stock:0,quantity:1,price:0});
+  renderSaleItems();
+}
+
+function removeItem(i){
+  saleItems.splice(i,1);
+  renderSaleItems();
+  calcTotal();
+}
+
+function onProductChange(i, pid){
+  const p = allProducts.find(x=>x.id==+pid);
+  if(p){
+    saleItems[i].product_id = p.id;
+    saleItems[i].product_name = p.name;
+    saleItems[i].stock = p.stock;
+    saleItems[i].price = p.sale_price;
+    renderSaleItems();
+  }
+  calcTotal();
+}
+
+function onQtyChange(i, v){
+  saleItems[i].quantity = +v||0;
+  renderSaleItems();
+  calcTotal();
+}
+
+function onPriceChange(i, v){
+  saleItems[i].price = +v||0;
+  renderSaleItems();
+  calcTotal();
+}
+
+function calcTotal(){
+  const total = saleItems.reduce((s,it)=>s+(it.quantity||0)*(it.price||0), 0);
+  $('#total').textContent = total.toFixed(2);
+}
+
+function onMethod(){
+  const m = $('#f-method').value;
+  if(m==='credit'){
+    $('#f-paid').value = 0;
+  }
+}
+
+async function save(e){
+  e.preventDefault();
+  const valid = saleItems.filter(it=>it.product_id);
+  if(!valid.length){ alert('请至少添加一个商品'); return; }
+  const total = valid.reduce((s,it)=>s+(it.quantity||0)*(it.price||0), 0);
+  const method = $('#f-method').value;
+  let paid = +($('#f-paid').value)||0;
+  if(method !== 'credit') paid = total;
+  const body = {
+    customer_name: $('#f-customer').value.trim(),
+    customer_phone: $('#f-phone').value.trim(),
+    method: method,
+    paid: paid,
+    notes: $('#f-notes').value,
+    items: valid.map(it=>({
+      product_id: it.product_id,
+      product_name: it.product_name,
+      quantity: it.quantity,
+      price: it.price
+    }))
+  };
+  const d = await api('/api/sales', {method:'POST', body:JSON.stringify(body)});
+  if(!d) return;
+  $('#dlg').close();
+  loadList();
+}
+
+async function viewDetail(id){
+  const d = await api(`/api/sales/${id}`);
+  if(!d) return;
+  const s = d.data;
+  const methodMap = {cash:'现金',wechat:'微信',alipay:'支付宝',credit:'赊账'};
+  let html = `<h3>销售单 ${s.order_no}</h3>
+    <p>客户: ${s.customer_name||''} ${s.customer_phone||''} | 付款: ${methodMap[s.method]||s.method} | 已付: ¥${fmt(s.paid)} | 状态: ${tag(s.status)}</p>
+    <p>操作人: ${s.operator} | ${s.created_at}</p>
+    <p>备注: ${s.notes||''}</p>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>商品</th><th>数量</th><th>单价</th><th>小计</th></tr></thead><tbody>`;
+  (s.items||[]).forEach(i=>{
+    html += `<tr><td>${i.product_name}</td><td>${i.quantity}</td><td>¥${fmt(i.price)}</td><td>¥${fmt(i.subtotal)}</td></tr>`;
+  });
+  html += `<tr><td colspan="3" style="text-align:right;font-weight:bold">合计</td><td style="font-weight:bold">¥${fmt(s.total)}</td></tr>`;
+  html += '</tbody></table></div><div class="dlg-actions"><button class="primary" onclick="document.getElementById(\'detail\').close()">关闭</button></div>';
+  $('#detail-body').innerHTML = html;
+  $('#detail').showModal();
+}
+
+async function del(id){
+  if(!confirm('确认删除该销售单？库存将恢复。')) return;
+  await api(`/api/sales/${id}`, {method:'DELETE'});
+  loadList();
+}
+
+loadList();
+</script>
+{% endblock %}
