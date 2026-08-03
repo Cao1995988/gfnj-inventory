@@ -10,7 +10,7 @@ from functools import wraps
 from flask import Flask, g, jsonify, redirect, render_template, request, session, url_for
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24).hex()
+app.secret_key = os.environ.get('SECRET_KEY', 'gfnj-secret-key-2026-fixed')
 DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.db')
 
 
