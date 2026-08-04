@@ -203,8 +203,8 @@ def init_db():
             "INSERT OR IGNORE INTO users (id, username, password, display_name, role, enabled, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (u['id'], u['username'], '', u['display_name'], u['role'], u['enabled'], u['created_at'])
         )
-    # Update passwords: owner -> 2888, clerk -> 123456
-    db.execute("UPDATE users SET password = '2888' WHERE username = 'owner'")
+    # Update passwords: owner -> gfnj@2026, clerk -> 123456
+    db.execute("UPDATE users SET password = 'gfnj@2026' WHERE username = 'owner'")
     db.execute("UPDATE users SET password = '123456' WHERE username = 'clerk'")
     # Other users get default password
     db.execute("UPDATE users SET password = '123456' WHERE password = ''")
