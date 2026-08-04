@@ -365,6 +365,83 @@ def customers():
                            user={'name': session['display_name'], 'role': session['role']})
 
 
+
+@app.route('/outbound')
+@login_required
+def outbound():
+    return render_template('outbound.html',
+                           user={'name': session['display_name'], 'role': session['role']})
+
+@app.route('/api/outbounds', methods=['GET', 'POST'])
+@login_required
+def api_outbounds():
+    db = get_db()
+    if request.method == 'GET':
+        rows = db.execute("""
+            SELECT o.*, u.display_name as operator_name
+            FROM outbounds o LEFT JOIN users u ON o.operator_id = u.id
+            ORDER BY o.id DESC
+        """).fetchall()
+        return jsonify({'ok': True, 'data': [dict(r) for r in rows]})
+
+    data = request.get_json()
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'ok': False, 'msg': '请添加出库明细'})
+
+    order_no = gen_order_no('CK', 'outbounds')
+    total = sum(item.get('subtotal', 0) for item in items)
+
+    db.execute(
+        "INSERT INTO outbounds (order_no, customer_name, customer_phone, total, notes, operator_id) VALUES (?,?,?,?,?,?)",
+        (order_no, data.get('customer_name', ''), data.get('customer_phone', ''),
+         total, data.get('notes', ''), session.get('user_id'))
+    )
+    outbound_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    for item in items:
+        db.execute(
+            "INSERT INTO outbound_items (outbound_id, product_id, quantity, price, subtotal) VALUES (?,?,?,?,?)",
+            (outbound_id, item['product_id'], item.get('quantity', 0),
+             item.get('price', 0), item.get('subtotal', 0))
+        )
+        db.execute(
+            "UPDATE products SET stock = stock - ? WHERE id = ?",
+            (item.get('quantity', 0), item['product_id'])
+        )
+
+    db.commit()
+    add_log('outbounds', outbound_id, 'create', after={
+        'order_no': order_no, 'items': items, 'total': total
+    }, order_no=order_no)
+    return jsonify({'ok': True, 'data': {'id': outbound_id, 'order_no': order_no}})
+
+@app.route('/api/outbounds/<int:oid>', methods=['GET', 'DELETE'])
+@login_required
+def api_outbound(oid):
+    db = get_db()
+    outbound = db.execute("SELECT * FROM outbounds WHERE id = ?", (oid,)).fetchone()
+    if not outbound:
+        return jsonify({'ok': False, 'msg': '出库单不存在'}), 404
+
+    if request.method == 'GET':
+        outbound = dict(outbound)
+        items = db.execute(
+            "SELECT oi.*, p.name as product_name, p.code as product_code, p.unit FROM outbound_items oi JOIN products p ON oi.product_id = p.id WHERE oi.outbound_id = ?",
+            (oid,)
+        ).fetchall()
+        outbound['items'] = [dict(it) for it in items]
+        return jsonify({'ok': True, 'data': outbound})
+
+    # DELETE: restore stock
+    items = db.execute("SELECT * FROM outbound_items WHERE outbound_id = ?", (oid,)).fetchall()
+    for item in items:
+        db.execute("UPDATE products SET stock = stock + ? WHERE id = ?", (item['quantity'], item['product_id']))
+    db.execute("DELETE FROM outbounds WHERE id = ?", (oid,))
+    db.commit()
+    add_log('outbounds', oid, 'delete', before=dict(outbound), order_no=outbound['order_no'])
+    return jsonify({'ok': True})
+
 @app.route('/logs')
 @login_required
 def logs():
@@ -374,6 +451,7 @@ def logs():
 
 @app.route('/users')
 @login_required
+@owner_required
 def users():
     return render_template('users.html',
                            user={'name': session['display_name'], 'role': session['role']})
@@ -706,6 +784,7 @@ def api_logs():
 
 @app.route('/api/users', methods=['GET', 'POST'])
 @login_required
+@owner_required
 def api_users():
     db = get_db()
     if request.method == 'POST':

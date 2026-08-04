@@ -20,8 +20,28 @@ function renderList(){
   }).join('') || '<tr><td colspan="6">还没有扫码添加商品</td></tr>';
   $('#count').textContent = scanned.length;
 }
-function updateQty(i,v){ scanned[i].qty = +v||0; renderList(); }
-function clearList(){ scanned = []; renderList(); }
+function updateQty(i,v){ scanned[i].qty = +v||0; 
+function showToast(msg, type){
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;z-index:9999;animation:fadeInOut 2.5s ease;white-space:nowrap;pointer-events:none;";
+  t.style.background = type==="success" ? "#1e6b3a" : "#e76f51";
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity 0.5s"; }, 2000);
+  setTimeout(()=>{ t.remove(); }, 2500);
+}
+renderList(); }
+function clearList(){ scanned = []; 
+function showToast(msg, type){
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;z-index:9999;animation:fadeInOut 2.5s ease;white-space:nowrap;pointer-events:none;";
+  t.style.background = type==="success" ? "#1e6b3a" : "#e76f51";
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity 0.5s"; }, 2000);
+  setTimeout(()=>{ t.remove(); }, 2500);
+}
+renderList(); }
 function manualAdd(){ $('#m-code').value=''; $('#m-qty').value=1; $('#manual').showModal(); }
 async function addManual(e){
   e.preventDefault();
@@ -51,7 +71,17 @@ async function addByCode(code, qty){
   status.textContent = `✅ 已添加：${p.name}（${code}）`;
   status.style.background = '#e8f5e9';
   status.style.color = '#1e6b3a';
-  renderList();
+  
+function showToast(msg, type){
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;z-index:9999;animation:fadeInOut 2.5s ease;white-space:nowrap;pointer-events:none;";
+  t.style.background = type==="success" ? "#1e6b3a" : "#e76f51";
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity 0.5s"; }, 2000);
+  setTimeout(()=>{ t.remove(); }, 2500);
+}
+renderList();
 }
 
 // 检测运行环境
@@ -238,6 +268,26 @@ function showWeixinGuide(){
   dlg.className = 'modal';
   dlg.innerHTML = html + `<div class="dlg-actions"><button class="primary" onclick="this.closest('dialog').close()">知道了</button></div>`;
   document.body.appendChild(dlg);
+  // 播放音效提示
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    gain.gain.value = 0.15;
+    // 统计成功数量决定音调
+    const okCount = r.results.filter(it=>it.ok).length;
+    if(okCount === r.results.length && okCount > 0){
+      osc.frequency.value = 880; osc.type = "sine";
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+      setTimeout(()=>{ osc.frequency.value = 1100; osc.start(); osc.stop(audioCtx.currentTime + 0.3); }, 150);
+      showToast("✅ "+okCount+" 件商品 "+r.direction+"成功", "success");
+    } else {
+      osc.frequency.value = 300; osc.type = "square";
+      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      showToast("⚠️ 部分操作失败，请查看详情", "warn");
+    }
+  } catch(e) {}
   dlg.showModal();
   dlg.addEventListener('close', ()=>dlg.remove());
 }
@@ -269,6 +319,26 @@ async function submit(){
   dlg.className='modal large';
   dlg.innerHTML = html;
   document.body.appendChild(dlg);
+  // 播放音效提示
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    gain.gain.value = 0.15;
+    // 统计成功数量决定音调
+    const okCount = r.results.filter(it=>it.ok).length;
+    if(okCount === r.results.length && okCount > 0){
+      osc.frequency.value = 880; osc.type = "sine";
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+      setTimeout(()=>{ osc.frequency.value = 1100; osc.start(); osc.stop(audioCtx.currentTime + 0.3); }, 150);
+      showToast("✅ "+okCount+" 件商品 "+r.direction+"成功", "success");
+    } else {
+      osc.frequency.value = 300; osc.type = "square";
+      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+      showToast("⚠️ 部分操作失败，请查看详情", "warn");
+    }
+  } catch(e) {}
   dlg.showModal();
   dlg.addEventListener('close',()=>{ dlg.remove(); clearList(); });
 }
@@ -291,5 +361,15 @@ async function initFromHash(){
   }
 }
 
+
+function showToast(msg, type){
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;z-index:9999;animation:fadeInOut 2.5s ease;white-space:nowrap;pointer-events:none;";
+  t.style.background = type==="success" ? "#1e6b3a" : "#e76f51";
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transition="opacity 0.5s"; }, 2000);
+  setTimeout(()=>{ t.remove(); }, 2500);
+}
 renderList();
 initFromHash();

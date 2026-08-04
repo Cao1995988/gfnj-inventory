@@ -10,11 +10,12 @@
     <a href="/scan" class="btn primary">扫码出入库</a>
     <a href="/products" class="btn">商品管理</a>
     <a href="/purchases" class="btn">入库登记</a>
+    <a href="/outbound" class="btn">出库登记</a>
     <a href="/suppliers" class="btn">供应商</a>
     <a href="/customers" class="btn">赊账客户</a>
     <a href="/qrcodes" class="btn">商品二维码</a>
     <a href="/logs" class="btn">操作记录</a>
-    {% if user.role == 'owner' %}
+    {% if user.role in ('owner', 'manager') %}
     <a href="/users" class="btn">用户管理</a>
     {% endif %}
   </div>

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}出库登记{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>出库登记</h2>
+  <button class="btn primary" onclick="openForm()">+ 新建出库单</button>
+</div>
+<div class="table-wrap"><table class="data-table" id="tbl">
+  <thead><tr><th>单号</th><th>客户</th><th>电话</th><th>金额</th><th>操作人</th><th>日期</th><th>备注</th><th>操作</th></tr></thead>
+  <tbody></tbody>
+</table></div>
+<dialog id="dlg" class="modal" style="max-width:600px">
+  <form method="dialog" onsubmit="save(event)">
+    <h3 id="dlg-title">新建出库单</h3>
+    <input type="hidden" id="f-id">
+    <label>客户名称<input id="f-customer" placeholder="选填"></label>
+    <label>客户电话<input id="f-phone" placeholder="选填"></label>
+    <label>备注<input id="f-notes" placeholder="选填"></label>
+    <h4>出库明细</h4>
+    <div id="items"></div>
+    <button type="button" class="btn small" onclick="addItem()">+ 添加商品</button>
+    <p style="text-align:right;font-weight:bold;margin-top:10px">合计: <span id="f-total">0.00</span></p>
+    <div class="dlg-actions">
+      <button type="button" onclick="document.getElementById('dlg').close()">取消</button>
+      <button type="submit" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+let products = [];
+async function loadProducts(){
+  const d = await api('/api/products');
+  if(d) products = d.data;
+}
+async function load(){
+  const d = await api('/api/outbounds');
+  if(!d) return;
+  .innerHTML = d.data.map(o=>"<tr><td>"+o.order_no+"</td><td>"+(o.customer_name||"")+"</td><td>"+(o.customer_phone||"")+"</td><td>"+fmt(o.total)+"</td><td>"+(o.operator_name||"")+"</td><td>"+(o.created_at||"").substring(0,10)+"</td><td>"+(o.notes||"")+"</td><td><button class="btn small" onclick="viewDetail("+o.id+")">查看</button> <button class="btn small danger" onclick="del("+o.id+",'"+o.order_no+"')">删</button></td></tr>").join("") || "<tr><td colspan=8>无数据</td></tr>";
+}
+function openForm(){
+  .textContent = "新建出库单";
+  .value = "";
+  .value = "";
+  .value = "";
+  .value = "";
+  .innerHTML = "";
+  addItem();
+  .showModal();
+}
+function addItem(){
+  const opts = products.map(p=>"<option value=""+p.id+"" data-price=""+(p.sale_price||0)+"" data-stock=""+(p.stock||0)+"">"+p.code+" "+p.name+" (库存"+(p.stock||0)+")</option>").join("");
+  const div = document.createElement("div");
+  div.className = "item-row";
+  div.innerHTML = "<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><select class="item-product" onchange="onProductChange(this)" style="flex:2"><option value="">选择商品</option>"+opts+"</select><input type="number" class="item-qty" value="1" min="1" step="0.01" style="width:60px" oninput="calcTotal()" placeholder="数量"><input type="number" class="item-price" value="0" step="0.01" style="width:80px" oninput="calcTotal()" placeholder="单价"><span class="item-sub">0.00</span><button type="button" class="btn small danger" onclick="this.closest('.item-row').remove();calcTotal()">x</button></div>";
+  .appendChild(div);
+}
+function onProductChange(sel){
+  const opt = sel.selectedOptions[0];
+  const row = sel.closest(".item-row");
+  if(opt && opt.dataset.price){
+    row.querySelector(".item-price").value = opt.dataset.price;
+    calcTotal();
+  }
+}
+function calcTotal(){
+  let total = 0;
+  document.querySelectorAll(".item-row").forEach(row => {
+    const qty = parseFloat(row.querySelector(".item-qty")?.value)||0;
+    const price = parseFloat(row.querySelector(".item-price")?.value)||0;
+    const sub = qty * price;
+    row.querySelector(".item-sub").textContent = fmt(sub);
+    total += sub;
+  });
+  .textContent = fmt(total);
+}
+async function save(e){
+  e.preventDefault();
+  const items = [];
+  document.querySelectorAll(".item-row").forEach(row => {
+    const pid = row.querySelector(".item-product")?.value;
+    const qty = parseFloat(row.querySelector(".item-qty")?.value)||0;
+    const price = parseFloat(row.querySelector(".item-price")?.value)||0;
+    if(pid && qty > 0){
+      items.push({product_id: parseInt(pid), quantity: qty, price: price, subtotal: qty*price});
+    }
+  });
+  if(!items.length){ alert("请至少添加一个商品"); return; }
+  const body = {
+    customer_name: .value.trim(),
+    customer_phone: .value.trim(),
+    notes: .value.trim(),
+    items: items,
+  };
+  const d = await api("/api/outbounds", {method:"POST", body:JSON.stringify(body)});
+  if(!d) return;
+  .close();
+  load();
+}
+async function viewDetail(id){
+  const d = await api("/api/outbounds/"+id);
+  if(!d) return;
+  const o = d.data;
+  const items = (o.items||[]).map(it=>"<tr><td>"+(it.product_name||"")+"</td><td>"+it.quantity+"</td><td>"+fmt(it.price)+"</td><td>"+fmt(it.subtotal)+"</td></tr>").join("");
+  const html = "<div style="max-width:500px;margin:20px auto;background:#fff;padding:20px;border-radius:8px"><h3>出库单 "+o.order_no+"</h3><p>客户: "+(o.customer_name||"--")+" | 电话: "+(o.customer_phone||"--")+"</p><p>备注: "+(o.notes||"--")+" | 金额: "+fmt(o.total)+"</p><table class="data-table"><thead><tr><th>商品</th><th>数量</th><th>单价</th><th>小计</th></tr></thead><tbody>"+items+"</tbody></table><p style="text-align:right;margin-top:10px"><button class="btn" onclick="this.parentElement.parentElement.parentElement.remove()">关闭</button></p></div>";
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center";
+  wrapper.innerHTML = html;
+  wrapper.onclick = function(e){ if(e.target===wrapper) wrapper.remove(); };
+  document.body.appendChild(wrapper);
+}
+async function del(id, no){
+  if(!confirm("确认删除出库单 "+no+"？将恢复库存。")) return;
+  await api("/api/outbounds/"+id, {method:"DELETE"});
+  load();
+}
+loadProducts();
+load();
+</script>
+{% endblock %}
