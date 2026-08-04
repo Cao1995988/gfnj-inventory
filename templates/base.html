@@ -16,6 +16,18 @@
 <body>
   <header class="top-bar">
     <a href="/" class="brand">⚙️ 共福农机</a>
+    <div class="nav">
+      <a href="/">看板</a>
+      <a href="/sales">销售开单</a>
+      <a href="/scan">扫码出入库</a>
+      <a href="/products">商品管理</a>
+      <a href="/purchases">入库登记</a>
+      <a href="/suppliers">供应商</a>
+      <a href="/customers">赊账客户</a>
+      <a href="/qrcodes">商品二维码</a>
+      <a href="/logs">操作记录</a>
+      <a href="/users">用户管理</a>
+    </div>
     <div class="user">
       <span>{{ user.name }}</span>
       <small>{{ '店长' if user.role == 'owner' else '店员' }}</small>
