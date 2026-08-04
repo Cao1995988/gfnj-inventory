@@ -20,11 +20,21 @@
       </label>
       <button type="submit">登录</button>
     </form>
-    <p class="hint">店长 owner（密码2888）/ 店员 clerk（密码123456）</p>
+    <p class="hint">店长 owner（密码 gfnj@2026）/ 店员 clerk（密码 123456）</p>
   </div>
   <style>
-  .remember-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #555; cursor: pointer; user-select: none; }
-  .remember-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #1e6b3a; }
+  .remember-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #555; cursor: pointer; user-select: none; margin: 8px 0; }
+  .remember-label input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    cursor: pointer;
+    accent-color: #1e6b3a;
+    -webkit-appearance: checkbox !important;
+    appearance: checkbox !important;
+    flex-shrink: 0;
+  }
   </style>
   <script>
   (function() {
